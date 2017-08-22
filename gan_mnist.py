@@ -21,7 +21,7 @@ import tflib.plot
 
 MODE = 'lgan'#'wgan-gp' # dcgan, wgan, or wgan-gp
 DIM = 64 # Model dimensionality
-BATCH_SIZE = 50 # Batch size
+BATCH_SIZE = 10#50 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 ITERS = 200000 # How many generator iterations to train for 
