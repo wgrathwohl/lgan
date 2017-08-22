@@ -121,7 +121,11 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
                 s, u, v = tf.svd([filters_mat], full_matrices=True)
             s = s[0]
             max_singular_value = tf.reduce_max(s)
-            result = result / max_singular_value
+            in_hw = np.prod(inputs.get_shape().as_list()[2:])
+            out_hw = np.prod(result.get_shape().as_list()[2:])
+            sfactor = (out_hw ** .5) / (in_hw ** .5) / filter_size
+            result = sfactor * result / max_singular_value
+
 
         if biases:
             _biases = lib.param(

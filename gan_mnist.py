@@ -19,7 +19,7 @@ import tflib.save_images
 import tflib.mnist
 import tflib.plot
 
-MODE = 'wgan-gp' # dcgan, wgan, or wgan-gp
+MODE = 'lgan'#'wgan-gp' # dcgan, wgan, or wgan-gp
 DIM = 64 # Model dimensionality
 BATCH_SIZE = 50 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
@@ -27,6 +27,7 @@ LAMBDA = 10 # Gradient penalty lambda hyperparameter
 ITERS = 200000 # How many generator iterations to train for 
 OUTPUT_DIM = 784 # Number of pixels in MNIST (28*28)
 TRAIN_DIR = "/u/wgrathwohl/mnist_gan_{}".format(MODE)
+LIPSCHITZ = MODE == 'lgan'
 
 if os.path.exists(TRAIN_DIR):
     print("Deleting existing train dir")
@@ -90,21 +91,21 @@ def Generator(n_samples, noise=None):
 def Discriminator(inputs):
     output = tf.reshape(inputs, [-1, 1, 28, 28])
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)
+    output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2,lipschitz_contraint=LIPSCHITZ)
     output = LeakyReLU(output)
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2)
+    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2,lipschitz_contraint=LIPSCHITZ)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
     output = LeakyReLU(output)
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2)
+    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2,lipschitz_contraint=LIPSCHITZ)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
     output = LeakyReLU(output)
 
     output = tf.reshape(output, [-1, 4*4*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output)
+    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output,lipschitz_contraint=LIPSCHITZ)
 
     return tf.reshape(output, [-1])
 
@@ -139,21 +140,22 @@ if MODE == 'wgan':
         )
     clip_disc_weights = tf.group(*clip_ops)
 
-elif MODE == 'wgan-gp':
+elif MODE == 'wgan-gp' or MODE == 'lgan':
     gen_cost = -tf.reduce_mean(disc_fake)
     disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
 
-    alpha = tf.random_uniform(
-        shape=[BATCH_SIZE,1], 
-        minval=0.,
-        maxval=1.
-    )
-    differences = fake_data - real_data
-    interpolates = real_data + (alpha*differences)
-    gradients = tf.gradients(Discriminator(interpolates), [interpolates])[0]
-    slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
-    gradient_penalty = tf.reduce_mean((slopes-1.)**2)
-    disc_cost += LAMBDA*gradient_penalty
+    if MODE == 'wgan-gp':
+        alpha = tf.random_uniform(
+            shape=[BATCH_SIZE,1],
+            minval=0.,
+            maxval=1.
+        )
+        differences = fake_data - real_data
+        interpolates = real_data + (alpha*differences)
+        gradients = tf.gradients(Discriminator(interpolates), [interpolates])[0]
+        slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
+        gradient_penalty = tf.reduce_mean((slopes-1.)**2)
+        disc_cost += LAMBDA*gradient_penalty
 
     gen_train_op = tf.train.AdamOptimizer(
         learning_rate=1e-4, 
@@ -243,7 +245,7 @@ with tf.Session() as session:
             disc_iters = CRITIC_ITERS
         for i in xrange(disc_iters):
             _data = gen.next()
-            if i == 0 and iteration % 10 == 0:
+            if i == 0 and iteration % 100 == 0:
                 sum_str, _disc_cost, _ = session.run(
                     [summary_op, disc_cost, disc_train_op],
                     feed_dict={real_data: _data}
