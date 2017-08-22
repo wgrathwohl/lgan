@@ -233,9 +233,6 @@ with tf.Session() as session:
 
     for iteration in xrange(ITERS):
         start_time = time.time()
-        if iteration % 10 == 0:
-            sum_str = session.run(summary_op)
-            summary_writer.add_summary(sum_str, iteration)
 
         if iteration > 0:
             _ = session.run(gen_train_op)
@@ -246,10 +243,17 @@ with tf.Session() as session:
             disc_iters = CRITIC_ITERS
         for i in xrange(disc_iters):
             _data = gen.next()
-            _disc_cost, _ = session.run(
-                [disc_cost, disc_train_op],
-                feed_dict={real_data: _data}
-            )
+            if i == 0 and iteration % 10 == 0:
+                sum_str, _disc_cost, _ = session.run(
+                    [summary_op, disc_cost, disc_train_op],
+                    feed_dict={real_data: _data}
+                )
+                summary_writer.add_summary(sum_str, iteration)
+            else:
+                _disc_cost, _ = session.run(
+                    [disc_cost, disc_train_op],
+                    feed_dict={real_data: _data}
+                )
             if clip_disc_weights is not None:
                 _ = session.run(clip_disc_weights)
 
