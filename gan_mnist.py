@@ -222,7 +222,8 @@ tf.summary.scalar("disc_cost", disc_cost)
 tf.summary.histogram("lipschitz_constants", norm_ratio)
 tf.summary.scalar("mean_lipschitz", mean_lipschitz)
 tf.summary.scalar("max_lipschitz", max_lipschitz)
-
+summary_op = tf.summary.merge_all()
+summary_writer = tf.summary.FileWriter(TRAIN_DIR)
 # Train loop
 with tf.Session() as session:
 
@@ -232,6 +233,9 @@ with tf.Session() as session:
 
     for iteration in xrange(ITERS):
         start_time = time.time()
+        if iteration % 10 == 0:
+            sum_str = session.run(summary_op)
+            summary_writer.add_summary(sum_str, iteration)
 
         if iteration > 0:
             _ = session.run(gen_train_op)
