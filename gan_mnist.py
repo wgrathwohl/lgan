@@ -245,7 +245,7 @@ with tf.Session() as session:
             disc_iters = CRITIC_ITERS
         for i in xrange(disc_iters):
             _data = gen.next()
-            if i == 0 and iteration % 100 == 0:
+            if i == 0 and iteration % 10 == 0:
                 sum_str, _disc_cost, _ = session.run(
                     [summary_op, disc_cost, disc_train_op],
                     feed_dict={real_data: _data}
