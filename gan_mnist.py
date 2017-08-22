@@ -91,21 +91,21 @@ def Generator(n_samples, noise=None):
 def Discriminator(inputs):
     output = tf.reshape(inputs, [-1, 1, 28, 28])
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2,lipschitz_contraint=LIPSCHITZ)
+    output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2,lipschitz_constraint=LIPSCHITZ)
     output = LeakyReLU(output)
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2,lipschitz_contraint=LIPSCHITZ)
+    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2,lipschitz_constraint=LIPSCHITZ)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
     output = LeakyReLU(output)
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2,lipschitz_contraint=LIPSCHITZ)
+    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2,lipschitz_constraint=LIPSCHITZ)
     if MODE == 'wgan':
         output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
     output = LeakyReLU(output)
 
     output = tf.reshape(output, [-1, 4*4*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output,lipschitz_contraint=LIPSCHITZ)
+    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output,lipschitz_constraint=LIPSCHITZ)
 
     return tf.reshape(output, [-1])
 

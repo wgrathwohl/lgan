@@ -18,7 +18,7 @@ def unset_weights_stdev():
     global _weights_stdev
     _weights_stdev = None
 
-def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_type=None, stride=1, weightnorm=None, biases=True, gain=1., lipschitz_contraint=False):
+def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_type=None, stride=1, weightnorm=None, biases=True, gain=1., lipschitz_constraint=False):
     """
     inputs: tensor of shape (batch size, num channels, height, width)
     mask_type: one of None, 'a', 'b'
@@ -112,7 +112,7 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             data_format='NCHW'
         )
 
-        if lipschitz_contraint:
+        if lipschitz_constraint:
             filters_mat = tf.reshape(filters, [-1, output_dim])
             k_shape = filters_mat.get_shape().as_list()
             if k_shape[0] < k_shape[1]:
