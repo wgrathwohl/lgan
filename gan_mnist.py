@@ -213,7 +213,7 @@ def inf_train_gen():
             yield images
 
 # Add tensorboard logging
-out_norm = tf.norm(disc_real - disc_fake, axis=1)
+out_norm = tf.abs(disc_real - disc_fake)
 in_norm = tf.norm(real_data - fake_data, axis=[1, 2, 3])
 norm_ratio = out_norm / in_norm
 mean_lipschitz = tf.reduce_mean(norm_ratio)
