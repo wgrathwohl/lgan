@@ -26,6 +26,14 @@ CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 ITERS = 200000 # How many generator iterations to train for 
 OUTPUT_DIM = 784 # Number of pixels in MNIST (28*28)
+TRAIN_DIR = "~/mnist_gan_{}".format(MODE)
+
+if os.path.exists(TRAIN_DIR):
+    print("Deleting existing train dir")
+    import shutil
+
+    shutil.rmtree(TRAIN_DIR)
+os.makedirs(TRAIN_DIR)
 
 lib.print_model_settings(locals().copy())
 
@@ -203,6 +211,17 @@ def inf_train_gen():
     while True:
         for images,targets in train_gen():
             yield images
+
+# Add tensorboard logging
+out_norm = tf.norm(disc_real - disc_fake, axis=1)
+in_norm = tf.norm(real_data - fake_data, axis=[1, 2, 3])
+norm_ratio = out_norm / in_norm
+mean_lipschitz = tf.reduce_mean(norm_ratio)
+max_lipschitz = tf.reduce_max(norm_ratio)
+tf.summary.scalar("disc_cost", disc_cost)
+tf.summary.histogram("lipschitz_constants", norm_ratio)
+tf.summary.scalar("mean_lipschitz", mean_lipschitz)
+tf.summary.scalar("max_lipschitz", max_lipschitz)
 
 # Train loop
 with tf.Session() as session:
