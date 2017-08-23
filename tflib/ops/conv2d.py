@@ -123,7 +123,7 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             max_singular_value = tf.reduce_max(s)
             in_hw = np.prod(inputs.get_shape().as_list()[2:])
             out_hw = np.prod(result.get_shape().as_list()[2:])
-            sfactor = (out_hw ** .5) / (in_hw ** .5) / filter_size
+            sfactor = (out_hw ** .5) / (in_hw ** .5) * filter_size
             result = sfactor * result / max_singular_value
 
 
