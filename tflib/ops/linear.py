@@ -31,7 +31,8 @@ def Linear(
         initialization=None,
         weightnorm=None,
         gain=1.,
-        lipschitz_constraint=False
+        lipschitz_constraint=False,
+        l_iters=2
         ):
     """
     initialization: None, `lecun`, 'glorot', `he`, 'glorot_he', `orthogonal`, `("uniform", range)`
@@ -141,12 +142,20 @@ def Linear(
         if lipschitz_constraint:
             k_shape = weight.get_shape().as_list()
             if k_shape[0] < k_shape[1]:
-                s, u, v = tf.svd([tf.transpose(weight)], full_matrices=True)
+                KtK = tf.matmul(weight, weight, transpose_b=True)
             else:
-                s, u, v = tf.svd([weight], full_matrices=True)
-            s = s[0]
-            max_singular_value = tf.reduce_max(s)
-            result = result / max_singular_value
+                KtK = tf.matmul(weight, weight, transpose_a=True)
+            print(KtK.get_shape().as_list())
+            u = np.random.random((KtK.get_shape().as_list()[0]), dtype=np.float32)
+            u = u / np.linalg.norm(u)
+            print(np.linalg.norm(u))
+            u = tf.constant(u, dtype=tf.float32)
+            for l_iter in range(l_iters):
+                u = tf.matmul(KtK, u)
+                u_norm = tf.norm(u)
+                u = u / u_norm
+            s = tf.sqrt(u_norm)
+            result = result / s
 
         if biases:
             result = tf.nn.bias_add(

@@ -18,7 +18,7 @@ def unset_weights_stdev():
     global _weights_stdev
     _weights_stdev = None
 
-def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_type=None, stride=1, weightnorm=None, biases=True, gain=1., lipschitz_constraint=False):
+def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_type=None, stride=1, weightnorm=None, biases=True, gain=1., lipschitz_constraint=False, l_iters=2):
     """
     inputs: tensor of shape (batch size, num channels, height, width)
     mask_type: one of None, 'a', 'b'
@@ -115,16 +115,26 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
         if lipschitz_constraint:
             filters_mat = tf.reshape(filters, [-1, output_dim])
             k_shape = filters_mat.get_shape().as_list()
+            print(k_shape)
             if k_shape[0] < k_shape[1]:
-                s, u, v = tf.svd([tf.transpose(filters_mat)], full_matrices=True)
+                KtK = tf.matmul(filters_mat, filters_mat, transpose_b=True)
             else:
-                s, u, v = tf.svd([filters_mat], full_matrices=True)
-            s = s[0]
-            max_singular_value = tf.reduce_max(s)
+                KtK = tf.matmul(filters_mat, filters_mat, transpose_a=True)
+            print(KtK.get_shape().as_list())
+            u = np.random.random((KtK.get_shape().as_list()[0]), dtype=np.float32)
+            u = u / np.linalg.norm(u)
+            print(np.linalg.norm(u))
+            u = tf.constant(u, dtype=tf.float32)
+            for l_iter in range(l_iters):
+                u = tf.matmul(KtK, u)
+                u_norm = tf.norm(u)
+                u = u / u_norm
+            s = tf.sqrt(u_norm)
+            #max_singular_value = tf.reduce_max(s)
             in_hw = np.prod(inputs.get_shape().as_list()[2:])
             out_hw = np.prod(result.get_shape().as_list()[2:])
             sfactor = (out_hw ** .5) / (in_hw ** .5)# * filter_size
-            result = sfactor * result / max_singular_value
+            result = sfactor * result / s#max_singular_value
 
 
         if biases:
