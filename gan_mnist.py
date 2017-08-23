@@ -91,6 +91,15 @@ def Generator(n_samples, noise=None):
 
 def Discriminator(inputs):
     nonlin = tf.abs if MODE == "lgan" else LeakyReLU
+    # if MODE == "lgan":
+    #     output = lib.ops.linear.Linear('Discriminator.1', 784, 128, inputs, lipschitz_constraint=LIPSCHITZ)
+    #     output = nonlin(output)
+    #     output = lib.ops.linear.Linear('Discriminator.2', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
+    #     output = nonlin(output)
+    #     output = lib.ops.linear.Linear('Discriminator.3', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
+    #     output = nonlin(output)
+    #     output = lib.ops.linear.Linear('Discriminator.Output', 128, 1, output, lipschitz_constraint=LIPSCHITZ)
+    # else:
     if tflib.ops.conv2d.format() == 'NCHW':
         output = tf.reshape(inputs, [-1, 1, 28, 28])
     else:

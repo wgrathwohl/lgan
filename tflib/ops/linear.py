@@ -139,14 +139,19 @@ def Linear(
             result = tf.reshape(result, tf.pack(tf.unpack(tf.shape(inputs))[:-1] + [output_dim]))
 
         if lipschitz_constraint:
-            k_shape = weight.get_shape().as_list()
-            if k_shape[0] < k_shape[1]:
-                KtK = tf.matmul(weight, weight, transpose_b=True)
-            else:
-                KtK = tf.matmul(weight, weight, transpose_a=True)
-            eigs, _ = tf.self_adjoint_eig(KtK)
-            sv_1 = tf.sqrt(tf.reduce_max(eigs))
-            result = result / sv_1
+            # k_shape = weight.get_shape().as_list()
+            # if k_shape[0] < k_shape[1]:
+            #     KtK = tf.matmul(weight, weight, transpose_b=True)
+            # else:
+            #     KtK = tf.matmul(weight, weight, transpose_a=True)
+            # eigs, _ = tf.self_adjoint_eig(KtK)
+            # sv_1 = tf.sqrt(tf.reduce_max(eigs))
+            # result = result / sv_1
+            in_norms = tf.norm(inputs, axis=1)
+            out_norms = tf.norm(result, axis=1)
+            ratios = out_norms / in_norms
+            r = tf.reduce_max(ratios)
+            result = result / r
 
         if biases:
             result = tf.nn.bias_add(

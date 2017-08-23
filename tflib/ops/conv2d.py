@@ -124,21 +124,27 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
         )
 
         if lipschitz_constraint:
-            filters_mat = tf.reshape(filters, [-1, output_dim])
-            k_shape = filters_mat.get_shape().as_list()
-            print(k_shape)
-            if k_shape[0] < k_shape[1]:
-                KtK = tf.matmul(filters_mat, filters_mat, transpose_b=True)
-            else:
-                KtK = tf.matmul(filters_mat, filters_mat, transpose_a=True)
-            print(KtK.get_shape().as_list())
-            eigs, _ = tf.self_adjoint_eig(KtK)
-            sv_1 = tf.sqrt(tf.reduce_max(eigs))
+            # filters_mat = tf.reshape(filters, [-1, output_dim])
+            # k_shape = filters_mat.get_shape().as_list()
+            # print(k_shape)
+            # if k_shape[0] < k_shape[1]:
+            #     KtK = tf.matmul(filters_mat, filters_mat, transpose_b=True)
+            # else:
+            #     KtK = tf.matmul(filters_mat, filters_mat, transpose_a=True)
+            # print(KtK.get_shape().as_list())
+            # eigs, _ = tf.self_adjoint_eig(KtK)
+            # sv_1 = tf.sqrt(tf.reduce_max(eigs))
+            #
+            # in_hw = np.prod(inputs.get_shape().as_list()[2:])
+            # out_hw = np.prod(result.get_shape().as_list()[2:])
+            # sfactor = (out_hw ** .5) / (in_hw ** .5)# / filter_size
+            # result = sfactor * result / sv_1
+            in_norms = tf.norm(inputs, axis=[1, 2, 3])
+            out_norms = tf.norm(result, axis=[1, 2, 3])
+            ratios = out_norms / in_norms
+            r = tf.reduce_max(ratios)
+            result = result / r
 
-            in_hw = np.prod(inputs.get_shape().as_list()[2:])
-            out_hw = np.prod(result.get_shape().as_list()[2:])
-            sfactor = (out_hw ** .5) / (in_hw ** .5)# / filter_size
-            result = sfactor * result / sv_1
 
 
         if biases:
