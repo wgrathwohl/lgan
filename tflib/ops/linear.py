@@ -146,7 +146,7 @@ def Linear(
             else:
                 KtK = tf.matmul(weight, weight, transpose_a=True)
             print(KtK.get_shape().as_list())
-            u = np.random.random((KtK.get_shape().as_list()[0]), dtype=np.float32)
+            u = np.random.random((KtK.get_shape().as_list()[0]))
             u = u / np.linalg.norm(u)
             print(np.linalg.norm(u))
             u = tf.constant(u, dtype=tf.float32)
