@@ -147,7 +147,7 @@ def Linear(
             else:
                 KtK = tf.matmul(weight, weight, transpose_a=True)
             print(KtK.get_shape().as_list())
-            sp_mean = tf.sqrt(tf.reduce_max(tf.self_adjoint_eigvals(KtK)))
+            sp_mean = tf.sqrt(tf.reduce_max(tf.self_adjoint_eigvals([KtK]))[0])
             # u = tf.nn.l2_normalize(tf.random_normal((KtK.get_shape().as_list()[0], l_samples)), 1)
             # for l_iter in range(4):
             #     u = tf.matmul(KtK, u)
