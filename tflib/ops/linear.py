@@ -33,7 +33,7 @@ def Linear(
         gain=1.,
         lipschitz_constraint=False,
         l_iters=4,
-        l_samples=10
+        l_samples=1
         ):
     """
     initialization: None, `lecun`, 'glorot', `he`, 'glorot_he', `orthogonal`, `("uniform", range)`
@@ -142,31 +142,37 @@ def Linear(
 
         if lipschitz_constraint:
             k_shape = weight.get_shape().as_list()
-            # if k_shape[0] < k_shape[1]:
-            #     KtK = tf.matmul(weight, weight, transpose_b=True)
-            # else:
-            #     KtK = tf.matmul(weight, weight, transpose_a=True)
-            # print(KtK.get_shape().as_list())
-            # u = tf.l2_normalize(tf.random_normal((KtK.get_shape().as_list()[0], l_samples)), 1)
-            # for l_iter in range(l_iters):
-            #     u = tf.matmul(KtK, u)
-            #     u_norm = tf.norm(u, axis=1, keep_dims=True)
-            #     u = u / u_norm
-            #
-            # s = tf.reduce_mean(tf.sqrt(u_norm))
-
-            # global DONE
-            # if not DONE:
             if k_shape[0] < k_shape[1]:
-                sv, u, v = tf.svd([tf.transpose(weight)], full_matrices=True)
+                KtK = tf.matmul(weight, weight, transpose_b=True)
             else:
-                sv, u, v = tf.svd([weight], full_matrices=True)
-            msv = sv[0]
-            max_singular_value = tf.reduce_max(msv)
-            #tf.summary.scalar("exact_s", max_singular_value)
-            #tf.summary.scalar("approx_s", s)
-            DONE = True
-            result = result / max_singular_value#s
+                KtK = tf.matmul(weight, weight, transpose_a=True)
+            print(KtK.get_shape().as_list())
+            u = tf.nn.l2_normalize(tf.random_normal((KtK.get_shape().as_list()[0], l_samples)), 1)
+            for l_iter in range(4):
+                u = tf.matmul(KtK, u)
+                u_norm = tf.norm(u, axis=1, keep_dims=True)
+                u = u / u_norm
+
+            s_preds = tf.sqrt(u_norm)
+            sp_mean = tf.reduce_mean(s_preds)
+
+
+            global DONE
+            if not DONE:
+                Ms = weight / sp_mean
+                s_Ms = tf.reduce_max(tf.svd(Ms, compute_uv=False))
+                if k_shape[0] < k_shape[1]:
+                    sv, u, v = tf.svd([tf.transpose(weight)], full_matrices=True)
+                else:
+                    sv, u, v = tf.svd([weight], full_matrices=True)
+                msv = sv[0]
+                max_singular_value = tf.reduce_max(msv)
+                tf.summary.scalar("lipschitz_from_approx", s_Ms)
+                tf.summary.scalar("approx_s", sp_mean)
+                tf.summary.scalar("true_s", max_singular_value)
+                DONE = True
+
+            result = result / sp_mean
 
         if biases:
             result = tf.nn.bias_add(

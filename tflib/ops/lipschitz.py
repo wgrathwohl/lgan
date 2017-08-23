@@ -66,3 +66,31 @@ def gradient_svd(op, grad_s, grad_u, grad_v):
 
     dxdz = tf.matmul(u, tf.matmul(2 * tf.matmul(realS, inner) + real_grad_S, v_t))
     return dxdz
+
+
+if __name__ == "__main__":
+    import numpy as np
+    sess = tf.Session()
+    iters = 100
+    for i in range(iters):
+        h = 128#np.random.randint(2, 1000)
+        w = 128#np.random.randint(2, 1000)
+        M = .001 * tf.constant(np.random.random((h, w)), dtype=tf.float32)
+        s_true = tf.reduce_max(tf.svd(M, compute_uv=False))
+
+        if h < w:
+            KtK = tf.matmul(M, M, transpose_b=True)
+        else:
+            KtK = tf.matmul(M, M, transpose_a=True)
+        u = tf.nn.l2_normalize(tf.random_normal((KtK.get_shape().as_list()[0], 1)), 1)
+        for l_iter in range(4):
+            u = tf.matmul(KtK, u)
+            u_norm = tf.norm(u, axis=1, keep_dims=True)
+            u = u / u_norm
+
+        s_preds = tf.sqrt(u_norm)
+        sp_mean = tf.reduce_mean(s_preds)
+        Ms = M / sp_mean
+        s_Ms = tf.reduce_max(tf.svd(Ms, compute_uv=False))
+        st, sp, sm, other = sess.run([s_true, s_preds, sp_mean, s_Ms])
+        print(st, sm, (st - sm)/st, sp.max(), sp.min(), other, (h, w))
