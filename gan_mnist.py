@@ -200,14 +200,22 @@ elif MODE == 'dcgan':
     ))
     disc_cost /= 2.
 
-    gen_train_op = tf.train.AdamOptimizer(
+    gen_opt = tf.train.AdamOptimizer(
         learning_rate=2e-4, 
         beta1=0.5
-    ).minimize(gen_cost, var_list=gen_params)
-    disc_train_op = tf.train.AdamOptimizer(
+    )
+    gen_gradvars = gen_opt.compute_gradients(gen_cost, var_list=gen_params)
+    disc_opt = tf.train.AdamOptimizer(
         learning_rate=2e-4, 
         beta1=0.5
-    ).minimize(disc_cost, var_list=disc_params)
+    )
+    disc_gradvars = disc_opt.compute_gradients(disc_cost, var_list=disc_params)
+    for grad, var in disc_gradvars + gen_gradvars:
+        tf.summary.histogram(var.name, var)
+        tf.summary.histogram(var.name+'_grad', grad)
+
+    disc_train_op = disc_opt.apply_gradients(disc_gradvars)
+    gen_train_op = gen_opt.apply_gradients(gen_gradvars)
 
     clip_disc_weights = None
 
