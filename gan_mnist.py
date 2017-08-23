@@ -284,7 +284,8 @@ with tf.Session() as session:
         start_time = time.time()
 
         if iteration > 0:
-            _ = session.run(gen_train_op)
+            _data = gen.next()
+            _ = session.run(gen_train_op, feed_dict={real_data: _data})
 
         if MODE == 'dcgan':
             disc_iters = 1
