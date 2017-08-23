@@ -21,7 +21,7 @@ def set_weights_stdev(weights_stdev):
 def unset_weights_stdev():
     global _weights_stdev
     _weights_stdev = None
-
+DONE=False
 def Linear(
         name, 
         input_dim, 
@@ -155,6 +155,17 @@ def Linear(
                 u = u / u_norm
             s = tf.reduce_mean(tf.sqrt(u_norm))
             result = result / s
+            global DONE
+            if not DONE:
+                if k_shape[0] < k_shape[1]:
+                    sv, u, v = tf.svd([tf.transpose(weight)], full_matrices=True)
+                else:
+                    sv, u, v = tf.svd([weight], full_matrices=True)
+                msv = sv[0]
+                max_singular_value = tf.reduce_max(msv)
+                tf.summary.scalar("exact_s", max_singular_value)
+                tf.summary.scalar("approx_s", s)
+                DONE = True
 
         if biases:
             result = tf.nn.bias_add(
