@@ -75,22 +75,19 @@ if __name__ == "__main__":
     for i in range(iters):
         h = 128#np.random.randint(2, 1000)
         w = 128#np.random.randint(2, 1000)
-        M = .001 * tf.constant(np.random.random((h, w)), dtype=tf.float32)
-        s_true = tf.reduce_max(tf.svd(M, compute_uv=False))
-
+        M = tf.constant(np.random.random((h, w)), dtype=tf.float32)
         if h < w:
             KtK = tf.matmul(M, M, transpose_b=True)
         else:
             KtK = tf.matmul(M, M, transpose_a=True)
-        u = tf.nn.l2_normalize(tf.random_normal((KtK.get_shape().as_list()[0], 1)), 1)
-        for l_iter in range(4):
-            u = tf.matmul(KtK, u)
-            u_norm = tf.norm(u, axis=1, keep_dims=True)
-            u = u / u_norm
 
-        s_preds = tf.sqrt(u_norm)
-        sp_mean = tf.reduce_mean(s_preds)
-        Ms = M / sp_mean
-        s_Ms = tf.reduce_max(tf.svd(Ms, compute_uv=False))
-        st, sp, sm, other = sess.run([s_true, s_preds, sp_mean, s_Ms])
-        print(st, sm, (st - sm)/st, sp.max(), sp.min(), other, (h, w))
+        s_true = tf.sqrt(tf.reduce_max(tf.self_adjoint_eig(KtK)))
+
+        s = 127
+        S = tf.random_normal((w, s)) / np.sqrt(s)
+        C = tf.matmul(M, S)
+        print(C.get_shape().as_list(), KtK.get_shape().as_list())
+        s_pred = tf.reduce_max(tf.svd(C, compute_uv=False))
+
+        st, sp = sess.run([s_true, s_pred])
+        print(st, sp, (st - sp)/st, (h, w))

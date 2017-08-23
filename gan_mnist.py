@@ -91,15 +91,6 @@ def Generator(n_samples, noise=None):
 
 def Discriminator(inputs):
     nonlin = tf.abs if MODE == "lgan" else LeakyReLU
-    # if MODE == "lgan":
-    #     output = lib.ops.linear.Linear('Discriminator.1', 784, 128, inputs, lipschitz_constraint=LIPSCHITZ)
-    #     output = nonlin(output)
-    #     output = lib.ops.linear.Linear('Discriminator.2', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
-    #     output = nonlin(output)
-    #     output = lib.ops.linear.Linear('Discriminator.3', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
-    #     output = nonlin(output)
-    #     output = lib.ops.linear.Linear('Discriminator.Output', 128, 1, output, lipschitz_constraint=LIPSCHITZ)
-    # else:
     if tflib.ops.conv2d.format() == 'NCHW':
         output = tf.reshape(inputs, [-1, 1, 28, 28])
     else:
@@ -171,16 +162,25 @@ elif MODE == 'wgan-gp' or MODE == 'lgan':
         gradient_penalty = tf.reduce_mean((slopes-1.)**2)
         disc_cost += LAMBDA*gradient_penalty
 
-    gen_train_op = tf.train.AdamOptimizer(
+    gen_opt = tf.train.AdamOptimizer(
         learning_rate=1e-4, 
         beta1=0.5,
         beta2=0.9
-    ).minimize(gen_cost, var_list=gen_params)
-    disc_train_op = tf.train.AdamOptimizer(
+    )
+    gen_gradvars = gen_opt.compute_gradients(gen_cost, var_list=gen_params)
+    disc_opt = tf.train.AdamOptimizer(
         learning_rate=1e-4, 
         beta1=0.5, 
         beta2=0.9
-    ).minimize(disc_cost, var_list=disc_params)
+    )
+    disc_gradvars = disc_opt.compute_gradients(disc_cost, var_list=disc_params)
+
+    for grad, var in disc_gradvars + gen_gradvars:
+        tf.summary.histogram(var.name, var)
+        tf.summary.histogram(var.name+'_grad', grad)
+
+    disc_train_op = disc_opt.apply_gradients(disc_gradvars)
+    gen_train_op = gen_opt.apply_gradients(gen_gradvars)
 
     clip_disc_weights = None
 
