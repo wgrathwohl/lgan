@@ -89,45 +89,59 @@ def Generator(n_samples, noise=None):
 
     return tf.reshape(output, [-1, OUTPUT_DIM])
 
-def Discriminator(inputs):
-    nonlin = tf.abs if MODE == "lgan" else LeakyReLU
-    # if MODE == "lgan":
-    #     output = lib.ops.linear.Linear('Discriminator.1', 784, 128, inputs, lipschitz_constraint=LIPSCHITZ)
-    #     output = nonlin(output)
-    #     output = lib.ops.linear.Linear('Discriminator.2', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
-    #     output = nonlin(output)
-    #     output = lib.ops.linear.Linear('Discriminator.3', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
-    #     output = nonlin(output)
-    #     output = lib.ops.linear.Linear('Discriminator.Output', 128, 1, output, lipschitz_constraint=LIPSCHITZ)
-    # else:
+def batch_scale(in1, in2, out1, out2):
+    """
+    :return: scales outputs so max ||f(x) - f(y)|| / ||x - y|| = 1
+    for x in in1 and y in in2
+    """
+    in_size = np.prod(in1.get_shape().as_list()[1:])
+    out_size = np.prod(out1.get_shape().as_list()[1:])
+    in_norm = tf.norm(tf.reshape(in1 - in2, [-1, in_size]), axis=1)
+    out_norm = tf.norm(tf.reshape(out1 - out2, [-1, out_size]), axis=1)
+    ratios = out_norm / in_norm
+    ratio = tf.reduce_max(ratios)
+    return out1 / ratio, out2 / ratio
+
+
+def Discriminator(in1, in2):
+    nonlin = LeakyReLU
     if tflib.ops.conv2d.format() == 'NCHW':
-        output = tf.reshape(inputs, [-1, 1, 28, 28])
+        in1 = tf.reshape(in1, [-1, 1, 28, 28])
+        in2 = tf.reshape(in2, [-1, 1, 28, 28])
     else:
-        output = tf.reshape(inputs, [-1, 28, 28, 1])
+        in1 = tf.reshape(in1, [-1, 28, 28, 1])
+        in2 = tf.reshape(in2, [-1, 28, 28, 1])
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2,lipschitz_constraint=LIPSCHITZ)
-    output = nonlin(output)
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,in1,stride=2)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.1', 1, DIM, 5, in2, stride=2)
+    out1 = nonlin(out1)
+    out2 = nonlin(out2)
+    in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2,lipschitz_constraint=LIPSCHITZ)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
-    output = nonlin(output)
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, in1, stride=2)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, in2, stride=2)
+    out1 = nonlin(out1)
+    out2 = nonlin(out2)
+    in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2,lipschitz_constraint=LIPSCHITZ)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
-    output = nonlin(output)
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, in1, stride=2)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.3', 2 * DIM, 4 * DIM, 5, in2, stride=2)
+    out1 = nonlin(out1)
+    out2 = nonlin(out2)
+    in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    output = tf.reshape(output, [-1, 4*4*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output,lipschitz_constraint=LIPSCHITZ)
+    in1 = tf.reshape(in1, [-1, 4*4*4*DIM])
+    in2 = tf.reshape(in2, [-1, 4 * 4 * 4 * DIM])
+    out1 = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, in1)
+    out2 = lib.ops.linear.Linear('Discriminator.Output', 4 * 4 * 4 * DIM, 1, in2)
+    out1, out2 = batch_scale(in1, in2, out1, out2)
 
-    return tf.reshape(output, [-1])
+    return tf.reshape(out1, [-1]), tf.reshape(out2, [-1])
 
 real_data = tf.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
 fake_data = Generator(BATCH_SIZE)
 
-disc_real = Discriminator(real_data)
-disc_fake = Discriminator(fake_data)
+disc_real, disc_fake = Discriminator(real_data, fake_data)
 
 gen_params = lib.params_with_name('Generator')
 disc_params = lib.params_with_name('Discriminator')
