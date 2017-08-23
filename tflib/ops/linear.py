@@ -148,10 +148,10 @@ def Linear(
                 KtK = tf.matmul(weight, weight, transpose_a=True)
             print(KtK.get_shape().as_list())
             u = tf.random_normal((KtK.get_shape().as_list()[0], l_samples))
-            u = u / tf.norm(u, axis=[1], keep_dims=True)
+            u = u / tf.norm(u, axis=1, keep_dims=True)
             for l_iter in range(l_iters):
                 u = tf.matmul(KtK, u)
-                u_norm = tf.norm(u, axis=[1], keep_dims=True)
+                u_norm = tf.norm(u, axis=1, keep_dims=True)
                 u = u / u_norm
             s = tf.reduce_mean(tf.sqrt(u_norm))
             result = result / s
