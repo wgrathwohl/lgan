@@ -142,30 +142,31 @@ def Linear(
 
         if lipschitz_constraint:
             k_shape = weight.get_shape().as_list()
+            # if k_shape[0] < k_shape[1]:
+            #     KtK = tf.matmul(weight, weight, transpose_b=True)
+            # else:
+            #     KtK = tf.matmul(weight, weight, transpose_a=True)
+            # print(KtK.get_shape().as_list())
+            # u = tf.l2_normalize(tf.random_normal((KtK.get_shape().as_list()[0], l_samples)), 1)
+            # for l_iter in range(l_iters):
+            #     u = tf.matmul(KtK, u)
+            #     u_norm = tf.norm(u, axis=1, keep_dims=True)
+            #     u = u / u_norm
+            #
+            # s = tf.reduce_mean(tf.sqrt(u_norm))
+
+            # global DONE
+            # if not DONE:
             if k_shape[0] < k_shape[1]:
-                KtK = tf.matmul(weight, weight, transpose_b=True)
+                sv, u, v = tf.svd([tf.transpose(weight)], full_matrices=True)
             else:
-                KtK = tf.matmul(weight, weight, transpose_a=True)
-            print(KtK.get_shape().as_list())
-            u = tf.random_normal((KtK.get_shape().as_list()[0], l_samples))
-            u = u / tf.norm(u, axis=1, keep_dims=True)
-            for l_iter in range(l_iters):
-                u = tf.matmul(KtK, u)
-                u_norm = tf.norm(u, axis=1, keep_dims=True)
-                u = u / u_norm
-            s = tf.reduce_mean(tf.sqrt(u_norm))
-            result = result / s
-            global DONE
-            if not DONE:
-                if k_shape[0] < k_shape[1]:
-                    sv, u, v = tf.svd([tf.transpose(weight)], full_matrices=True)
-                else:
-                    sv, u, v = tf.svd([weight], full_matrices=True)
-                msv = sv[0]
-                max_singular_value = tf.reduce_max(msv)
-                tf.summary.scalar("exact_s", max_singular_value)
-                tf.summary.scalar("approx_s", s)
-                DONE = True
+                sv, u, v = tf.svd([weight], full_matrices=True)
+            msv = sv[0]
+            max_singular_value = tf.reduce_max(msv)
+            #tf.summary.scalar("exact_s", max_singular_value)
+            #tf.summary.scalar("approx_s", s)
+            DONE = True
+            result = result / max_singular_value#s
 
         if biases:
             result = tf.nn.bias_add(
