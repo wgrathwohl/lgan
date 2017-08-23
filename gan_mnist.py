@@ -20,14 +20,14 @@ import tflib.mnist
 import tflib.plot
 
 
-MODE = 'lgan'#'wgan-gp' # dcgan, wgan, or wgan-gp
+MODE = 'wgan-gp'#'lgan'#'wgan-gp' # dcgan, wgan, or wgan-gp
 DIM = 64 # Model dimensionality
 BATCH_SIZE = 50 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 ITERS = 200000 # How many generator iterations to train for 
 OUTPUT_DIM = 784 # Number of pixels in MNIST (28*28)
-TRAIN_DIR = "/u/wgrathwohl/mnist_gan_{}".format(MODE)
+TRAIN_DIR = "/tmp/train/"#"/u/wgrathwohl/mnist_gan_{}".format(MODE)
 LIPSCHITZ = MODE == 'lgan'
 
 if os.path.exists(TRAIN_DIR):
@@ -91,35 +91,35 @@ def Generator(n_samples, noise=None):
 
 def Discriminator(inputs):
     nonlin = tf.abs if MODE == "lgan" else LeakyReLU
-    if MODE == "lgan":
-        output = lib.ops.linear.Linear('Discriminator.1', 784, 128, inputs, lipschitz_constraint=LIPSCHITZ)
-        output = nonlin(output)
-        output = lib.ops.linear.Linear('Discriminator.2', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
-        output = nonlin(output)
-        output = lib.ops.linear.Linear('Discriminator.3', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
-        output = nonlin(output)
-        output = lib.ops.linear.Linear('Discriminator.Output', 128, 1, output, lipschitz_constraint=LIPSCHITZ)
+    # if MODE == "lgan":
+    #     output = lib.ops.linear.Linear('Discriminator.1', 784, 128, inputs, lipschitz_constraint=LIPSCHITZ)
+    #     output = nonlin(output)
+    #     output = lib.ops.linear.Linear('Discriminator.2', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
+    #     output = nonlin(output)
+    #     output = lib.ops.linear.Linear('Discriminator.3', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
+    #     output = nonlin(output)
+    #     output = lib.ops.linear.Linear('Discriminator.Output', 128, 1, output, lipschitz_constraint=LIPSCHITZ)
+    # else:
+    if tflib.ops.conv2d.format() == 'NCHW':
+        output = tf.reshape(inputs, [-1, 1, 28, 28])
     else:
-        if tflib.ops.conv2d.format() == 'NCHW':
-            output = tf.reshape(inputs, [-1, 1, 28, 28])
-        else:
-            output = tf.reshape(inputs, [-1, 28, 28, 1])
+        output = tf.reshape(inputs, [-1, 28, 28, 1])
 
-        output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2,lipschitz_constraint=LIPSCHITZ)
-        output = nonlin(output)
+    output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2,lipschitz_constraint=LIPSCHITZ)
+    output = nonlin(output)
 
-        output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2,lipschitz_constraint=LIPSCHITZ)
-        if MODE == 'wgan':
-            output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
-        output = nonlin(output)
+    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2,lipschitz_constraint=LIPSCHITZ)
+    if MODE == 'wgan':
+        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
+    output = nonlin(output)
 
-        output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2,lipschitz_constraint=LIPSCHITZ)
-        if MODE == 'wgan':
-            output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
-        output = nonlin(output)
+    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2,lipschitz_constraint=LIPSCHITZ)
+    if MODE == 'wgan':
+        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
+    output = nonlin(output)
 
-        output = tf.reshape(output, [-1, 4*4*4*DIM])
-        output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output,lipschitz_constraint=LIPSCHITZ)
+    output = tf.reshape(output, [-1, 4*4*4*DIM])
+    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output,lipschitz_constraint=LIPSCHITZ)
 
     return tf.reshape(output, [-1])
 
