@@ -139,10 +139,10 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             # out_hw = np.prod(result.get_shape().as_list()[2:])
             # sfactor = (out_hw ** .5) / (in_hw ** .5)# / filter_size
             # result = sfactor * result / sv_1
-            in_shape = inputs.get_shape().as_list()
-            out_shape = result.get_shape().as_list()
-            in_norms = tf.norm(tf.reshape(inputs, [in_shape[0], -1]), axis=1)
-            out_norms = tf.norm(tf.reshape(result, [out_shape[0], -1]), axis=1)
+            in_shape = np.prod(inputs.get_shape().as_list()[1:])
+            out_shape = np.prod(result.get_shape().as_list()[1:])
+            in_norms = tf.norm(tf.reshape(inputs, [-1, in_shape]), axis=1)
+            out_norms = tf.norm(tf.reshape(result, [-1, out_shape]), axis=1)
             ratios = out_norms / in_norms
             r = tf.reduce_max(ratios)
             result = result / r
