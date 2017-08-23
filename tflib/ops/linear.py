@@ -153,7 +153,7 @@ def Linear(
                 u = tf.matmul(KtK, u)
                 u_norm = tf.norm(u, axis=1, keep_dims=True)
                 u = u / u_norm
-            s = tf.sqrt(tf.reduce_mean(u_norm))
+            s = tf.reduce_mean(tf.sqrt(u_norm))
             result = result / s
 
         if biases:

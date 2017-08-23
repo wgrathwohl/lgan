@@ -127,19 +127,19 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
                 u = tf.matmul(KtK, u)
                 u_norm = tf.norm(u, axis=1, keep_dims=True)
                 u = u / u_norm
-            s = tf.sqrt(tf.reduce_mean(u_norm))
+            s = tf.reduce_mean(tf.sqrt(u_norm))
             print(s.get_shape().as_list())
-            global DONE
-            if not DONE:
-                if k_shape[0] < k_shape[1]:
-                    sv, u, v = tf.svd([tf.transpose(filters_mat)], full_matrices=True)
-                else:
-                    sv, u, v = tf.svd([filters_mat], full_matrices=True)
-                msv = sv[0]
-                max_singular_value = tf.reduce_max(msv)
-                tf.summary.scalar("exact_s", max_singular_value)
-                tf.summary.scalar("approx_s", s)
-                DONE = True
+            # global DONE
+            # if not DONE:
+            #     if k_shape[0] < k_shape[1]:
+            #         sv, u, v = tf.svd([tf.transpose(filters_mat)], full_matrices=True)
+            #     else:
+            #         sv, u, v = tf.svd([filters_mat], full_matrices=True)
+            #     msv = sv[0]
+            #     max_singular_value = tf.reduce_max(msv)
+            #     tf.summary.scalar("exact_s", max_singular_value)
+            #     tf.summary.scalar("approx_s", s)
+            #     DONE = True
             in_hw = np.prod(inputs.get_shape().as_list()[2:])
             out_hw = np.prod(result.get_shape().as_list()[2:])
             sfactor = (out_hw ** .5) / (in_hw ** .5) / filter_size
