@@ -32,7 +32,7 @@ def Linear(
         weightnorm=None,
         gain=1.,
         lipschitz_constraint=False,
-        l_iters=2
+        l_iters=4
         ):
     """
     initialization: None, `lecun`, 'glorot', `he`, 'glorot_he', `orthogonal`, `("uniform", range)`
