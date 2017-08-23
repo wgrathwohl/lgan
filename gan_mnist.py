@@ -97,7 +97,7 @@ def Discriminator(inputs):
         output = nonlin(output)
         output = lib.ops.linear.Linear('Discriminator.3', 128, 128, output, lipschitz_constraint=LIPSCHITZ)
         output = nonlin(output)
-        output = lib.ops.linear.Linear('Discriminator.Output', 128, 1, output, lipschitz_constraint=LIPSCHITZ)
+        output = lib.ops.linear.Linear('Discriminator.Output', 128, 1, output)#, lipschitz_constraint=LIPSCHITZ)
     else:
         output = tf.reshape(inputs, [-1, 1, 28, 28])
 
