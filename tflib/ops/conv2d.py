@@ -142,7 +142,7 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
                 DONE = True
             in_hw = np.prod(inputs.get_shape().as_list()[2:])
             out_hw = np.prod(result.get_shape().as_list()[2:])
-            sfactor = (out_hw ** .5) / (in_hw ** .5) / (filter_size**2)
+            sfactor = (out_hw ** .5) / (in_hw ** .5) / filter_size
             result = sfactor * result / s#max_singular_value
 
 
