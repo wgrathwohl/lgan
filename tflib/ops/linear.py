@@ -147,10 +147,8 @@ def Linear(
             # eigs, _ = tf.self_adjoint_eig(KtK)
             # sv_1 = tf.sqrt(tf.reduce_max(eigs))
             # result = result / sv_1
-            in_shape = inputs.get_shape().as_list()
-            out_shape = result.get_shape().as_list()
-            in_norms = tf.norm(tf.reshape(inputs, [in_shape[0], -1]), axis=1)
-            out_norms = tf.norm(tf.reshape(result, [out_shape[0], -1]), axis=1)
+            in_norms = tf.norm(inputs, axis=1)
+            out_norms = tf.norm(result, axis=1)
             ratios = out_norms / in_norms
             r = tf.reduce_max(ratios)
             result = result / r
