@@ -17,8 +17,16 @@ def set_weights_stdev(weights_stdev):
 def unset_weights_stdev():
     global _weights_stdev
     _weights_stdev = None
-DONE=False
-def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_type=None, stride=1, weightnorm=None, biases=True, gain=1., lipschitz_constraint=False, l_iters=4, l_samples=10):
+from tensorflow.python.client import device_lib
+
+def get_available_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    return [x.name for x in local_device_protos if x.device_type == 'GPU']
+
+def format():
+    return 'NCHW' if len(get_available_gpus()) > 0 else 'NHWC'
+
+def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_type=None, stride=1, weightnorm=None, biases=True, gain=1., lipschitz_constraint=False):
     """
     inputs: tensor of shape (batch size, num channels, height, width)
     mask_type: one of None, 'a', 'b'
@@ -104,12 +112,15 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             with tf.name_scope('filter_mask'):
                 filters = filters * mask
 
+        if format() == 'NHWC':
+            pass#filters = tf.transpose(filters, [0, 2, 3, 1])
+
         result = tf.nn.conv2d(
             input=inputs, 
             filter=filters, 
             strides=[1, 1, stride, stride],
             padding='SAME',
-            data_format='NCHW'
+            data_format=format()
         )
 
         if lipschitz_constraint:
@@ -121,29 +132,13 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             else:
                 KtK = tf.matmul(filters_mat, filters_mat, transpose_a=True)
             print(KtK.get_shape().as_list())
-            u = tf.random_normal((KtK.get_shape().as_list()[0], l_samples))
-            u = u / tf.norm(u, axis=1, keep_dims=True)
-            for l_iter in range(l_iters):
-                u = tf.matmul(KtK, u)
-                u_norm = tf.norm(u, axis=1, keep_dims=True)
-                u = u / u_norm
-            s = tf.reduce_mean(tf.sqrt(u_norm))
-            print(s.get_shape().as_list())
-            # global DONE
-            # if not DONE:
-            #     if k_shape[0] < k_shape[1]:
-            #         sv, u, v = tf.svd([tf.transpose(filters_mat)], full_matrices=True)
-            #     else:
-            #         sv, u, v = tf.svd([filters_mat], full_matrices=True)
-            #     msv = sv[0]
-            #     max_singular_value = tf.reduce_max(msv)
-            #     tf.summary.scalar("exact_s", max_singular_value)
-            #     tf.summary.scalar("approx_s", s)
-            #     DONE = True
+            eigs, _ = tf.self_adjoint_eig(KtK)
+            sv_1 = tf.sqrt(tf.reduce_max(eigs))
+
             in_hw = np.prod(inputs.get_shape().as_list()[2:])
             out_hw = np.prod(result.get_shape().as_list()[2:])
             sfactor = (out_hw ** .5) / (in_hw ** .5) / filter_size
-            result = sfactor * result / s#max_singular_value
+            result = sfactor * result / sv_1
 
 
         if biases:
@@ -152,7 +147,7 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
                 np.zeros(output_dim, dtype='float32')
             )
 
-            result = tf.nn.bias_add(result, _biases, data_format='NCHW')
+            result = tf.nn.bias_add(result, _biases, data_format=format())
 
 
         return result

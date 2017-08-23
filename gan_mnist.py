@@ -19,9 +19,10 @@ import tflib.save_images
 import tflib.mnist
 import tflib.plot
 
+
 MODE = 'lgan'#'wgan-gp' # dcgan, wgan, or wgan-gp
 DIM = 64 # Model dimensionality
-BATCH_SIZE = 10#50 # Batch size
+BATCH_SIZE = 50 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 ITERS = 200000 # How many generator iterations to train for 
@@ -99,7 +100,10 @@ def Discriminator(inputs):
         output = nonlin(output)
         output = lib.ops.linear.Linear('Discriminator.Output', 128, 1, output, lipschitz_constraint=LIPSCHITZ)
     else:
-        output = tf.reshape(inputs, [-1, 1, 28, 28])
+        if tflib.ops.conv2d.format() == 'NCHW':
+            output = tf.reshape(inputs, [-1, 1, 28, 28])
+        else:
+            output = tf.reshape(inputs, [-1, 28, 28, 1])
 
         output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2,lipschitz_constraint=LIPSCHITZ)
         output = nonlin(output)
@@ -226,7 +230,9 @@ def inf_train_gen():
 
 # Add tensorboard logging
 out_norm = tf.abs(disc_real - disc_fake)
-in_norm = tf.norm(real_data - fake_data, axis=1)
+data_shape = real_data.get_shape().as_list()
+print(disc_real.get_shape().as_list(), disc_fake.get_shape().as_list(), data_shape)
+in_norm = tf.norm(tf.reshape(real_data - fake_data, [data_shape[0], -1]), axis=1)
 norm_ratio = out_norm / in_norm
 mean_lipschitz = tf.reduce_mean(norm_ratio)
 max_lipschitz = tf.reduce_max(norm_ratio)
