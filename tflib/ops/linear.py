@@ -33,7 +33,7 @@ def Linear(
         gain=1.,
         lipschitz_constraint=False,
         l_iters=4,
-        l_samples=1
+        l_samples=10
         ):
     """
     initialization: None, `lecun`, 'glorot', `he`, 'glorot_he', `orthogonal`, `("uniform", range)`
@@ -162,11 +162,10 @@ def Linear(
                 Ms = weight / sp_mean
                 s_Ms = tf.reduce_max(tf.svd(Ms, compute_uv=False))
                 if k_shape[0] < k_shape[1]:
-                    sv, u, v = tf.svd([tf.transpose(weight)], full_matrices=True)
+                    sv, u, v = tf.svd(tf.transpose(weight), full_matrices=True)
                 else:
-                    sv, u, v = tf.svd([weight], full_matrices=True)
-                msv = sv[0]
-                max_singular_value = tf.reduce_max(msv)
+                    sv, u, v = tf.svd(weight, full_matrices=True)
+                max_singular_value = tf.reduce_max(sv)
                 tf.summary.scalar("lipschitz_from_approx", s_Ms)
                 tf.summary.scalar("approx_s", sp_mean)
                 tf.summary.scalar("true_s", max_singular_value)
