@@ -150,6 +150,7 @@ def Linear(
             eigs, _ = tf.self_adjoint_eig(KtK)
             print("eigs shape", eigs.get_shape().as_list())
             sp_mean = tf.sqrt(tf.reduce_max(eigs))
+
             # u = tf.nn.l2_normalize(tf.random_normal((KtK.get_shape().as_list()[0], l_samples)), 1)
             # for l_iter in range(4):
             #     u = tf.matmul(KtK, u)
@@ -158,7 +159,7 @@ def Linear(
             #
             # s_preds = tf.sqrt(u_norm)
             # sp_mean = tf.reduce_mean(s_preds)
-
+            result = result / sp_mean
 
             global DONE
             if not DONE:
@@ -173,8 +174,6 @@ def Linear(
                 tf.summary.scalar("approx_s", sp_mean)
                 tf.summary.scalar("true_s", max_singular_value)
                 DONE = True
-
-            result = result / sp_mean
 
         if biases:
             result = tf.nn.bias_add(
