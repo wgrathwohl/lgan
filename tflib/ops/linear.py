@@ -147,7 +147,7 @@ def Linear(
             else:
                 KtK = tf.matmul(weight, weight, transpose_a=True)
             print("ktk shape", KtK.get_shape().as_list())
-            eigs = tf.self_adjoint_eigvals(KtK)
+            eigs = tf.self_adjoint_eigvals(tf.expand_dims(KtK, 0))
             print("eigs shape", eigs.get_shape().as_list())
             sp_mean = tf.sqrt(tf.reduce_max(eigs))
             # u = tf.nn.l2_normalize(tf.random_normal((KtK.get_shape().as_list()[0], l_samples)), 1)
