@@ -121,7 +121,7 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             else:
                 KtK = tf.matmul(filters_mat, filters_mat, transpose_a=True)
             print(KtK.get_shape().as_list())
-            u = np.random.random((KtK.get_shape().as_list()[0]))
+            u = np.random.random((KtK.get_shape().as_list()[0], 1))
             u = u / np.linalg.norm(u)
             print(np.linalg.norm(u))
             u = tf.constant(u, dtype=tf.float32)
