@@ -97,7 +97,7 @@ def Discriminator(inputs):
     return tf.reshape(output, [-1])
 
 
-def batch_scale(in1, in2, out1, out2):
+def batch_scale(in1, in2, out1, out2, eps=1e-6):
     """
     :return: scales outputs so max ||f(x) - f(y)|| / ||x - y|| = 1
     for x in in1 and y in in2
@@ -107,7 +107,7 @@ def batch_scale(in1, in2, out1, out2):
     in_norm = tf.norm(tf.reshape(in1 - in2, [-1, in_size]), axis=1)
     out_norm = tf.norm(tf.reshape(out1 - out2, [-1, out_size]), axis=1)
     ratios = out_norm / in_norm
-    ratio = tf.reduce_max(ratios)
+    ratio = tf.reduce_max(ratios) + eps
     return out1 / ratio, out2 / ratio
 
 
