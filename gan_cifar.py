@@ -32,6 +32,13 @@ ITERS = 200000 # How many generator iterations to train for
 TRAIN_DIR = "/u/wgrathwohl/cifar_gan_{}".format(MODE)
 OUTPUT_DIM = 3072 # Number of pixels in CIFAR10 (3*32*32)
 
+if os.path.exists(TRAIN_DIR):
+    print("Deleting existing train dir")
+    import shutil
+
+    shutil.rmtree(TRAIN_DIR)
+os.makedirs(TRAIN_DIR)
+
 lib.print_model_settings(locals().copy())
 
 def LeakyReLU(x, alpha=0.2):
