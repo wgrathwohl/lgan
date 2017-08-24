@@ -29,7 +29,7 @@ LAMBDA = 10 # Gradient penalty lambda hyperparameter
 CRITIC_ITERS = 5 # How many critic iterations per generator iteration
 BATCH_SIZE = 64 # Batch size
 ITERS = 200000 # How many generator iterations to train for
-TRAIN_DIR = "/u/wgrathwohl/cifar_gan_{}".format(MODE)
+TRAIN_DIR = "/u/wgrathwohl/cifar_gan_{}_big_D".format(MODE)
 OUTPUT_DIM = 3072 # Number of pixels in CIFAR10 (3*32*32)
 
 if os.path.exists(TRAIN_DIR):
@@ -78,21 +78,49 @@ def Generator(n_samples, noise=None):
 def Discriminator(inputs):
     output = tf.reshape(inputs, [-1, 3, 32, 32])
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, output, stride=2)
-    output = LeakyReLU(output)
+    if True:
+        output = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, output, stride=1)
+        output = LeakyReLU(output)
+        output = lib.ops.conv2d.Conv2D('Discriminator.12', DIM, DIM, 5, output, stride=2)
+        output = LeakyReLU(output)
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2)
-    if MODE != 'wgan-gp':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
-    output = LeakyReLU(output)
+        output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, output, stride=2)
+        if MODE != 'wgan-gp':
+            output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0, 2, 3], output)
+        output = LeakyReLU(output)
+        output = lib.ops.conv2d.Conv2D('Discriminator.22', 2 * DIM, 2 * DIM, 5, output, stride=2)
+        if MODE != 'wgan-gp':
+            output = lib.ops.batchnorm.Batchnorm('Discriminator.BN22', [0, 2, 3], output)
+        output = LeakyReLU(output)
 
-    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2)
-    if MODE != 'wgan-gp':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
-    output = LeakyReLU(output)
+        output = lib.ops.conv2d.Conv2D('Discriminator.3', 2 * DIM, 4 * DIM, 5, output, stride=1)
+        if MODE != 'wgan-gp':
+            output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0, 2, 3], output)
+        output = LeakyReLU(output)
+        output = lib.ops.conv2d.Conv2D('Discriminator.32', 4 * DIM, 4 * DIM, 5, output, stride=2)
+        if MODE != 'wgan-gp':
+            output = lib.ops.batchnorm.Batchnorm('Discriminator.BN32', [0, 2, 3], output)
+        output = LeakyReLU(output)
 
-    output = tf.reshape(output, [-1, 4*4*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output)
+        output = tf.reshape(output, [-1, 4 * 4 * 4 * DIM])
+        output = lib.ops.linear.Linear('Discriminator.Output', 4 * 4 * 4 * DIM, 1, output)
+
+    else:
+        output = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, output, stride=2)
+        output = LeakyReLU(output)
+
+        output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2)
+        if MODE != 'wgan-gp':
+            output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
+        output = LeakyReLU(output)
+
+        output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2)
+        if MODE != 'wgan-gp':
+            output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
+        output = LeakyReLU(output)
+
+        output = tf.reshape(output, [-1, 4*4*4*DIM])
+        output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output)
 
     return tf.reshape(output, [-1])
 
@@ -115,30 +143,73 @@ def lgan_Discriminator(in1, in2):
     nonlin = LeakyReLU
     in1 = tf.reshape(in1, [-1, 3, 32, 32])
     in2 = tf.reshape(in2, [-1, 3, 32, 32])
+    if True:
+        out1 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in1, stride=1)
+        out2 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in2, stride=1)
+        out1 = nonlin(out1)
+        out2 = nonlin(out2)
+        in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    out1 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in1, stride=2)
-    out2 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in2, stride=2)
-    out1 = nonlin(out1)
-    out2 = nonlin(out2)
-    in1, in2 = batch_scale(in1, in2, out1, out2)
+        out1 = lib.ops.conv2d.Conv2D('Discriminator.12', DIM, DIM, 5, in1, stride=2)
+        out2 = lib.ops.conv2d.Conv2D('Discriminator.12', DIM, DIM, 5, in2, stride=2)
+        out1 = nonlin(out1)
+        out2 = nonlin(out2)
+        in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    out1 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, in1, stride=2)
-    out2 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, in2, stride=2)
-    out1 = nonlin(out1)
-    out2 = nonlin(out2)
-    in1, in2 = batch_scale(in1, in2, out1, out2)
+        out1 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, in1, stride=1)
+        out2 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, in2, stride=1)
+        out1 = nonlin(out1)
+        out2 = nonlin(out2)
+        in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    out1 = lib.ops.conv2d.Conv2D('Discriminator.3', 2 * DIM, 4 * DIM, 5, in1, stride=2)
-    out2 = lib.ops.conv2d.Conv2D('Discriminator.3', 2 * DIM, 4 * DIM, 5, in2, stride=2)
-    out1 = nonlin(out1)
-    out2 = nonlin(out2)
-    in1, in2 = batch_scale(in1, in2, out1, out2)
+        out1 = lib.ops.conv2d.Conv2D('Discriminator.22', 2 * DIM, 2 * DIM, 5, in1, stride=2)
+        out2 = lib.ops.conv2d.Conv2D('Discriminator.22', 2 * DIM, 2 * DIM, 5, in2, stride=2)
+        out1 = nonlin(out1)
+        out2 = nonlin(out2)
+        in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    in1 = tf.reshape(in1, [-1, 4 * 4 * 4 * DIM])
-    in2 = tf.reshape(in2, [-1, 4 * 4 * 4 * DIM])
-    out1 = lib.ops.linear.Linear('Discriminator.Output', 4 * 4 * 4 * DIM, 1, in1)
-    out2 = lib.ops.linear.Linear('Discriminator.Output', 4 * 4 * 4 * DIM, 1, in2)
-    out1, out2 = batch_scale(in1, in2, out1, out2)
+        out1 = lib.ops.conv2d.Conv2D('Discriminator.3', 2 * DIM, 4 * DIM, 5, in1, stride=1)
+        out2 = lib.ops.conv2d.Conv2D('Discriminator.3', 2 * DIM, 4 * DIM, 5, in2, stride=1)
+        out1 = nonlin(out1)
+        out2 = nonlin(out2)
+        in1, in2 = batch_scale(in1, in2, out1, out2)
+
+        out1 = lib.ops.conv2d.Conv2D('Discriminator.32', 4 * DIM, 4 * DIM, 5, in1, stride=2)
+        out2 = lib.ops.conv2d.Conv2D('Discriminator.32', 4 * DIM, 4 * DIM, 5, in2, stride=2)
+        out1 = nonlin(out1)
+        out2 = nonlin(out2)
+        in1, in2 = batch_scale(in1, in2, out1, out2)
+
+        in1 = tf.reshape(in1, [-1, 4 * 4 * 4 * DIM])
+        in2 = tf.reshape(in2, [-1, 4 * 4 * 4 * DIM])
+        out1 = lib.ops.linear.Linear('Discriminator.Output', 4 * 4 * 4 * DIM, 1, in1)
+        out2 = lib.ops.linear.Linear('Discriminator.Output', 4 * 4 * 4 * DIM, 1, in2)
+        out1, out2 = batch_scale(in1, in2, out1, out2)
+
+    else:
+        out1 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in1, stride=2)
+        out2 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in2, stride=2)
+        out1 = nonlin(out1)
+        out2 = nonlin(out2)
+        in1, in2 = batch_scale(in1, in2, out1, out2)
+
+        out1 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, in1, stride=2)
+        out2 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, in2, stride=2)
+        out1 = nonlin(out1)
+        out2 = nonlin(out2)
+        in1, in2 = batch_scale(in1, in2, out1, out2)
+
+        out1 = lib.ops.conv2d.Conv2D('Discriminator.3', 2 * DIM, 4 * DIM, 5, in1, stride=2)
+        out2 = lib.ops.conv2d.Conv2D('Discriminator.3', 2 * DIM, 4 * DIM, 5, in2, stride=2)
+        out1 = nonlin(out1)
+        out2 = nonlin(out2)
+        in1, in2 = batch_scale(in1, in2, out1, out2)
+
+        in1 = tf.reshape(in1, [-1, 4 * 4 * 4 * DIM])
+        in2 = tf.reshape(in2, [-1, 4 * 4 * 4 * DIM])
+        out1 = lib.ops.linear.Linear('Discriminator.Output', 4 * 4 * 4 * DIM, 1, in1)
+        out2 = lib.ops.linear.Linear('Discriminator.Output', 4 * 4 * 4 * DIM, 1, in2)
+        out1, out2 = batch_scale(in1, in2, out1, out2)
 
     return tf.reshape(out1, [-1]), tf.reshape(out2, [-1])
 
