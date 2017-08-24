@@ -27,7 +27,7 @@ CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 ITERS = 200000 # How many generator iterations to train for 
 OUTPUT_DIM = 784 # Number of pixels in MNIST (28*28)
-TRAIN_DIR = "/u/wgrathwohl/mnist_gan_{}".format(MODE)
+TRAIN_DIR = "/u/wgrathwohl/mnist_gan_{}_big_D".format(MODE)
 LIPSCHITZ = MODE == 'lgan'
 
 if os.path.exists(TRAIN_DIR):
@@ -112,28 +112,46 @@ def Discriminator(in1, in2):
         in1 = tf.reshape(in1, [-1, 28, 28, 1])
         in2 = tf.reshape(in2, [-1, 28, 28, 1])
 
-    out1 = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,in1,stride=2)
-    out2 = lib.ops.conv2d.Conv2D('Discriminator.1', 1, DIM, 5, in2, stride=2)
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.1', 1, DIM, 5, in1, stride=1)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.1', 1, DIM, 5, in2, stride=1)
     out1 = nonlin(out1)
     out2 = nonlin(out2)
     in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    out1 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, in1, stride=2)
-    out2 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, in2, stride=2)
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.12', DIM, DIM, 5, in1, stride=2)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.12', DIM, DIM, 5, in2, stride=2)
+    out1 = nonlin(out1)
+    out2 = nonlin(out2)
+    in1, in2 = batch_scale(in1, in2, out1, out2)
+
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, in1, stride=1)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, in2, stride=1)
+    out1 = nonlin(out1)
+    out2 = nonlin(out2)
+    in1, in2 = batch_scale(in1, in2, out1, out2)
+
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.22', 2*DIM, 2*DIM, 5, in1, stride=1)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.22', 2*DIM, 2*DIM, 5, in2, stride=1)
     out1 = nonlin(out1)
     out2 = nonlin(out2)
     in1, in2 = batch_scale(in1, in2, out1, out2)
 
     out1 = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, in1, stride=2)
-    out2 = lib.ops.conv2d.Conv2D('Discriminator.3', 2 * DIM, 4 * DIM, 5, in2, stride=2)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, in2, stride=2)
+    out1 = nonlin(out1)
+    out2 = nonlin(out2)
+    in1, in2 = batch_scale(in1, in2, out1, out2)
+
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.32', 4*DIM, 4*DIM, 5, in1, stride=2)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.32', 4*DIM, 4*DIM, 5, in2, stride=2)
     out1 = nonlin(out1)
     out2 = nonlin(out2)
     in1, in2 = batch_scale(in1, in2, out1, out2)
 
     in1 = tf.reshape(in1, [-1, 4*4*4*DIM])
-    in2 = tf.reshape(in2, [-1, 4 * 4 * 4 * DIM])
+    in2 = tf.reshape(in2, [-1, 4*4*4*DIM])
     out1 = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, in1)
-    out2 = lib.ops.linear.Linear('Discriminator.Output', 4 * 4 * 4 * DIM, 1, in2)
+    out2 = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, in2)
     out1, out2 = batch_scale(in1, in2, out1, out2)
 
     return tf.reshape(out1, [-1]), tf.reshape(out2, [-1])
@@ -293,7 +311,7 @@ with tf.Session() as session:
             disc_iters = CRITIC_ITERS
         for i in xrange(disc_iters):
             _data = gen.next()
-            if i == 0 and iteration % 10 == 0:
+            if i == 0 and iteration % 100 == 0:
                 sum_str, _disc_cost, _ = session.run(
                     [summary_op, disc_cost, disc_train_op],
                     feed_dict={real_data: _data}

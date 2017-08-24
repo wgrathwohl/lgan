@@ -24,7 +24,7 @@ def get_available_gpus():
     return [x.name for x in local_device_protos if x.device_type == 'GPU']
 
 def format():
-    return 'NCHW' if len(get_available_gpus()) > 0 else 'NHWC'
+    return 'NCHW' #if len(get_available_gpus()) > 0 else 'NHWC'
 
 def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_type=None, stride=1, weightnorm=None, biases=True, gain=1., lipschitz_constraint=False):
     """
@@ -111,9 +111,6 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
         if mask_type is not None:
             with tf.name_scope('filter_mask'):
                 filters = filters * mask
-
-        if format() == 'NHWC':
-            pass#filters = tf.transpose(filters, [0, 2, 3, 1])
 
         result = tf.nn.conv2d(
             input=inputs, 
