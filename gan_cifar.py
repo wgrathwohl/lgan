@@ -23,13 +23,13 @@ DATA_DIR = './data/cifar-10-batches-py'
 if len(DATA_DIR) == 0:
     raise Exception('Please specify path to data directory in gan_cifar.py!')
 
-MODE = 'wgan-gp' # Valid options are dcgan, wgan, or wgan-gp
+MODE = 'lgan' # Valid options are dcgan, wgan, or wgan-gp
 DIM = 128 # This overfits substantially; you're probably better off with 64
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 CRITIC_ITERS = 5 # How many critic iterations per generator iteration
 BATCH_SIZE = 64 # Batch size
 ITERS = 200000 # How many generator iterations to train for
-TRAIN_DIR = "/u/wgrathwohl/cifar_gan_{}_big_D".format(MODE)
+TRAIN_DIR = "/u/wgrathwohl/cifar_gan_{}".format(MODE)
 OUTPUT_DIM = 3072 # Number of pixels in CIFAR10 (3*32*32)
 
 if os.path.exists(TRAIN_DIR):
@@ -143,7 +143,7 @@ def lgan_Discriminator(in1, in2):
     nonlin = LeakyReLU
     in1 = tf.reshape(in1, [-1, 3, 32, 32])
     in2 = tf.reshape(in2, [-1, 3, 32, 32])
-    if True:
+    if False:
         out1 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in1, stride=1)
         out2 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in2, stride=1)
         out1 = nonlin(out1)
