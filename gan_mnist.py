@@ -130,14 +130,14 @@ def Discriminator(in1, in2):
     out2 = nonlin(out2)
     in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    out1 = lib.ops.conv2d.Conv2D('Discriminator.22', 2*DIM, 2*DIM, 5, in1, stride=1)
-    out2 = lib.ops.conv2d.Conv2D('Discriminator.22', 2*DIM, 2*DIM, 5, in2, stride=1)
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.22', 2*DIM, 2*DIM, 5, in1, stride=2)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.22', 2*DIM, 2*DIM, 5, in2, stride=2)
     out1 = nonlin(out1)
     out2 = nonlin(out2)
     in1, in2 = batch_scale(in1, in2, out1, out2)
 
-    out1 = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, in1, stride=2)
-    out2 = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, in2, stride=2)
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, in1, stride=1)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, in2, stride=1)
     out1 = nonlin(out1)
     out2 = nonlin(out2)
     in1, in2 = batch_scale(in1, in2, out1, out2)
