@@ -23,7 +23,7 @@ DATA_DIR = './data/cifar-10-batches-py'
 if len(DATA_DIR) == 0:
     raise Exception('Please specify path to data directory in gan_cifar.py!')
 
-MODE = 'wgan-gp' # Valid options are dcgan, wgan, or wgan-gp
+MODE = 'lgan'#'wgan-gp' # Valid options are dcgan, wgan, or wgan-gp
 DIM = 128 # This overfits substantially; you're probably better off with 64
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 CRITIC_ITERS = 5 # How many critic iterations per generator iteration
@@ -212,7 +212,7 @@ fixed_noise_samples_128 = Generator(128, noise=fixed_noise_128)
 def generate_image(frame, true_dist):
     samples = session.run(fixed_noise_samples_128, feed_dict={real_data: true_dist})
     samples = ((samples+1.)*(255./2)).astype('int32')
-    lib.save_images.save_images(samples.reshape((128, 3, 32, 32)), 'samples_{}.jpg'.format(frame))
+    lib.save_images.save_images(samples.reshape((128, 3, 32, 32)),'{}/samples_{}.png'.format(TRAIN_DIR, frame))
 
 # For calculating inception score
 samples_100 = Generator(100)
