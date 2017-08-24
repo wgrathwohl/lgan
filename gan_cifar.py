@@ -23,7 +23,7 @@ DATA_DIR = './data/cifar-10-batches-py'
 if len(DATA_DIR) == 0:
     raise Exception('Please specify path to data directory in gan_cifar.py!')
 
-MODE = 'lgan' # Valid options are dcgan, wgan, or wgan-gp
+MODE = 'wgan-gp' # Valid options are dcgan, wgan, or wgan-gp
 DIM = 128 # This overfits substantially; you're probably better off with 64
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 CRITIC_ITERS = 5 # How many critic iterations per generator iteration
@@ -84,7 +84,7 @@ def Discriminator(inputs):
         output = lib.ops.conv2d.Conv2D('Discriminator.12', DIM, DIM, 5, output, stride=2)
         output = LeakyReLU(output)
 
-        output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, output, stride=2)
+        output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2 * DIM, 5, output, stride=1)
         if MODE != 'wgan-gp':
             output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0, 2, 3], output)
         output = LeakyReLU(output)
