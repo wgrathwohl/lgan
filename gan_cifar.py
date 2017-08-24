@@ -109,8 +109,8 @@ def lgan_Discriminator(in1, in2):
     in1 = tf.reshape(in1, [-1, 3, 32, 32])
     in2 = tf.reshape(in2, [-1, 3, 32, 32])
 
-    out1 = lib.ops.conv2d.Conv2D('Discriminator.1', 1, DIM, 5, in1, stride=2)
-    out2 = lib.ops.conv2d.Conv2D('Discriminator.1', 1, DIM, 5, in2, stride=2)
+    out1 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in1, stride=2)
+    out2 = lib.ops.conv2d.Conv2D('Discriminator.1', 3, DIM, 5, in2, stride=2)
     out1 = nonlin(out1)
     out2 = nonlin(out2)
     in1, in2 = batch_scale(in1, in2, out1, out2)
