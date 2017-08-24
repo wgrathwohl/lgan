@@ -23,7 +23,7 @@ DATA_DIR = './data/cifar-10-batches-py'
 if len(DATA_DIR) == 0:
     raise Exception('Please specify path to data directory in gan_cifar.py!')
 
-MODE = 'lgan'#'wgan-gp' # Valid options are dcgan, wgan, or wgan-gp
+MODE = 'wgan-gp' # Valid options are dcgan, wgan, or wgan-gp
 DIM = 128 # This overfits substantially; you're probably better off with 64
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 CRITIC_ITERS = 5 # How many critic iterations per generator iteration
@@ -82,7 +82,7 @@ def Discriminator(inputs):
     output = LeakyReLU(output)
 
     output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2)
-    if MODE == 'wgan-gp':
+    if MODE != 'wgan-gp':
         output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
     output = LeakyReLU(output)
 
@@ -190,6 +190,7 @@ elif MODE == 'wgan-gp' or MODE == 'lgan':
         gradients = tf.gradients(Discriminator(interpolates), [interpolates])[0]
         slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
         gradient_penalty = tf.reduce_mean((slopes-1.)**2)
+        tf.summary.scalar("graident_penalty", gradient_penalty)
         disc_cost += LAMBDA*gradient_penalty
 
     gen_train_opt = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9)
